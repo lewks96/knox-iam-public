@@ -1,0 +1,32 @@
+# Rust build artefacts — by far the largest exclusion
+target/
+
+# Node — installed inside the image (deps stage), never copied in
+**/node_modules/
+ui/.next/
+ui/out/
+
+# Git internals
+.git/
+.gitignore
+.gitattributes
+
+# Local secrets — must never bake into an image.
+# The *.example templates are excluded too: nothing in an image reads them.
+.env
+.env.*
+
+# IDE / editor configs
+.idea/
+.vscode/
+*.iml
+
+# Deployment manifests, CI, docs and load tests — not needed in any image
+k8s/
+.github/
+k6/
+docs/
+*.md
+
+# Keep Cargo.lock for reproducible workspace builds
+!Cargo.lock

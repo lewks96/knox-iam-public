@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aspire-dashboard
+  namespace: knox
+  labels:
+    app: aspire-dashboard
+    app.kubernetes.io/part-of: knox-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aspire-dashboard
+  template:
+    metadata:
+      labels:
+        app: aspire-dashboard
+        app.kubernetes.io/part-of: knox-platform
+    spec:
+      # No internet access needed — pure in-cluster telemetry sink
+      automountServiceAccountToken: false
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
+      containers:
+        - name: aspire-dashboard
+          image: mcr.microsoft.com/dotnet/aspire-dashboard:9.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: ui
+              containerPort: 18888
+            - name: otlp-grpc
+              containerPort: 18889
+
+          env:
+            # ── Security ──────────────────────────────────────────────────────
+            # Require an API key for all OTLP ingest (gRPC + HTTP).
+            # The key is stored in the knox-aspire-secret Secret and mounted below.
+            - name: DASHBOARD__OTLP__AUTHENTICATIONOPTIONS__APIKEY
+              valueFrom:
+                secretKeyRef:
+                  name: knox-aspire-secret
+                  key: OTLP_API_KEY
+
+            # ── Browser login ─────────────────────────────────────────────────
+            # Require a static browser token for the dashboard UI.
+            - name: DASHBOARD__FRONTEND__AUTHENTICATIONOPTIONS__APIKEY
+              valueFrom:
+                secretKeyRef:
+                  name: knox-aspire-secret
+                  key: DASHBOARD_UI_TOKEN
+
+            # ── Bind addresses ────────────────────────────────────────────────
+            - name: ASPNETCORE_URLS
+              value: "http://+:18888"
+            - name: DASHBOARD__OTLP__GRPCENDPOINTURI
+              value: "http://+:18889"
+
+            # ── Unsecured CORS — UI is only reachable via in-cluster Ingress ──
+            - name: DASHBOARD__CORS__ALLOWEDORIGINS
+              value: ""
+
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false   # Aspire writes temp files
+            capabilities:
+              drop: [ "ALL" ]
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 18888
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 18888
+            initialDelaySeconds: 15
+            periodSeconds: 20
+

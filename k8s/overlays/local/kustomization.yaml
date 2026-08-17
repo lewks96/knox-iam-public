@@ -1,0 +1,104 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: knox
+
+resources:
+  - ../../base
+  - postgres.yaml
+  - pgbouncer.yaml
+
+# `scripts/docker.sh build` tags every image with both `latest` and the current
+# git short SHA, and `k3d-setup.sh deploy` rewrites the tags below to that SHA
+# before applying — so this file goes dirty on every setup run, by design.
+#
+# The committed default is `latest` because that is the other tag docker.sh
+# always produces locally: `kubectl apply -k` on a clean checkout then matches
+# what you have just built. Nothing here is published to a registry.
+images:
+  - name: knox/knox-iam-server
+    newTag: latest
+  - name: knox/knox-iam-migrate
+    newTag: latest
+  - name: knox/knox-iam-postgres
+    newTag: latest
+  - name: knox/knox-iam-ui
+    newTag: latest
+  - name: knox/knox-iam-pgbouncer
+    newTag: latest
+
+patches:
+  - target:
+      kind: Deployment
+      name: knox-server
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/template/spec/initContainers/2/imagePullPolicy
+        value: IfNotPresent
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: IfNotPresent
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: OTEL_EXPORTER_OTLP_HEADERS
+          valueFrom:
+            secretKeyRef:
+              name: knox-aspire-secret
+              key: OTLP_AUTH_HEADER
+  - target:
+      kind: Deployment
+      name: knox-ui
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: IfNotPresent
+  # ── Ingress (local) ──────────────────────────────────────────────────────
+  # Base ships ONE Ingress named knox-ingress — the per-surface knox-ui-ingress
+  # and knox-api-ingress were merged because nginx rejects duplicate host/path
+  # rules. A patch whose target matches nothing is silently skipped by
+  # kustomize, so the old names here built cleanly and produced an ingress with
+  # no TLS and a wildcard host nobody could reach.
+  #
+  # Both the rule host and the TLS block are filled in by `k3d-setup.sh`, which
+  # owns the base domain — so the cert SANs, the ingress, and the two ConfigMaps
+  # cannot drift apart.
+  #
+  # They must be set TOGETHER and to the SAME value. ingress-nginx derives its
+  # server blocks from `spec.rules[].host`; a `spec.tls[].hosts` entry naming a
+  # host that no rule matches is associated with nothing, and nginx answers that
+  # SNI with its built-in fake certificate instead. Dropping the host rule to
+  # "match any hostname" is what triggers exactly that.
+  #
+  # Nothing to patch structurally here — see cmd_deploy in the script.
+
+  - target:
+      kind: ConfigMap
+      name: knox-app-config
+    patch: |-
+      # Session-mode pgbouncer: each sqlx pool connection holds a real PG backend
+      # for its lifetime. Keep per-pod pools small so 10 HPA pods (40 total) fit
+      # within pgbouncer's DEFAULT_POOL_SIZE=50 and Postgres max_connections=100.
+      - op: replace
+        path: /data/MAX_CONNECTIONS
+        value: "4"
+      - op: replace
+        path: /data/MIN_CONNECTIONS
+        value: "1"
+      # A little extra headroom for brief pool contention during scale-up.
+      - op: replace
+        path: /data/ACQUIRE_TIMEOUT
+        value: "10"
+  # knox-ui-config is deliberately NOT patched here. Its three keys
+  # (MANAGEMENT_CLIENT_ID, MANAGEMENT_TENANT_ID, BASE_DOMAIN) are applied by
+  # k3d-setup.sh after this overlay lands, so they stay overridable by the same
+  # environment variables that drive the cert and the bootstrap Job.
+  #
+  # The removed REDIRECT_BASE_URL was vestigial: nothing reads it. The login
+  # form builds its callback from window.location.origin.

@@ -1,0 +1,131 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                id, tenant_id, pool_id,\n                kind as \"kind: IdentityKind\",\n                username, email, password_hash, email_verified,\n                first_name, last_name, metadata, custom_attributes,\n                status as \"status: Status\",\n                created_at, updated_at\n            FROM identities\n            WHERE pool_id = $1 AND lower(email) = lower($2)\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "tenant_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "pool_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "kind: IdentityKind",
+        "type_info": {
+          "Custom": {
+            "name": "identity_kind",
+            "kind": {
+              "Enum": [
+                "human",
+                "machine",
+                "service_account"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "username",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "password_hash",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "email_verified",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "first_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "last_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "metadata",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 11,
+        "name": "custom_attributes",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 12,
+        "name": "status: Status",
+        "type_info": {
+          "Custom": {
+            "name": "status",
+            "kind": {
+              "Enum": [
+                "active",
+                "disabled",
+                "inactive",
+                "suspended",
+                "pending"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 14,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "bc0c4d9d935249848085c1dfd96f7cbb2044df91f306ab863a4191a48f307e24"
+}

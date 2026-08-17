@@ -1,0 +1,35 @@
+[package]
+name = "server"
+version = "0.1.1"
+edition = "2024"
+
+[dependencies]
+axum = { workspace = true }
+axum-extra = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true, features = ["cors", "trace"] }
+jsonwebtoken = { workspace = true }
+sqlx = { workspace = true, features = ["runtime-tokio-native-tls", "postgres", "migrate", "chrono", "uuid", "macros"] }
+uuid = { workspace = true, features = ["serde", "v4"] }
+redis = { workspace = true, features = ["tokio-comp", "aio", "connection-manager", "tokio-native-tls-comp"] }
+tracing = { workspace = true, features = ["log"] }
+tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
+tracing-opentelemetry = { workspace = true }
+opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace = true }
+opentelemetry-otlp = { workspace = true, features = ["grpc-tonic"] }
+opentelemetry-appender-tracing = "0.31.0"
+axum-tracing-opentelemetry = "0.19"
+time = { workspace = true, features = ["serde"] }
+knox-common = { workspace = true }
+knox-core = { workspace = true }
+knox-storage = { workspace = true }
+knox-services = { workspace = true }
+base64 = "0.22"
+sha2 = { workspace = true }
+hex = { workspace = true }
+dotenvy = "0.15.7"
+urlencoding = "2.1.2"

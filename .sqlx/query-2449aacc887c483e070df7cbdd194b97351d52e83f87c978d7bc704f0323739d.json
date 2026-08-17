@@ -1,0 +1,251 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO clients (\n                id, tenant_id, pool_id, name, description, logo_uri, client_type, client_secret_hash,\n                token_endpoint_auth_method, grant_types, response_types, redirect_uris,\n                post_logout_redirect_uris, allowed_scopes, require_pkce, require_auth_time,\n                access_token_ttl, refresh_token_ttl, id_token_ttl, auth_code_ttl, token_version,\n                jwks_uri, jwks, tls_client_auth_subject_dn, tls_client_auth_san_dns,\n                tls_client_auth_san_uri, tls_client_auth_san_ip, tls_client_auth_san_email,\n                status, metadata, custom_attributes, allow_refresh_tokens\n            )\n            VALUES (\n                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,\n                $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32\n            )\n            RETURNING *\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "tenant_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "logo_uri",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "client_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "client_secret_hash",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "token_endpoint_auth_method",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "grant_types",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 9,
+        "name": "response_types",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 10,
+        "name": "redirect_uris",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 11,
+        "name": "post_logout_redirect_uris",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 12,
+        "name": "allowed_scopes",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 13,
+        "name": "require_pkce",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 14,
+        "name": "require_auth_time",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 15,
+        "name": "access_token_ttl",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 16,
+        "name": "refresh_token_ttl",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 17,
+        "name": "id_token_ttl",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 18,
+        "name": "auth_code_ttl",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 19,
+        "name": "token_version",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 20,
+        "name": "jwks_uri",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 21,
+        "name": "jwks",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 22,
+        "name": "tls_client_auth_subject_dn",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 23,
+        "name": "tls_client_auth_san_dns",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 24,
+        "name": "tls_client_auth_san_uri",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 25,
+        "name": "tls_client_auth_san_ip",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 26,
+        "name": "tls_client_auth_san_email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 27,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 28,
+        "name": "metadata",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 29,
+        "name": "custom_attributes",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 30,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 31,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 32,
+        "name": "allow_refresh_tokens",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 33,
+        "name": "pool_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "TextArray",
+        "TextArray",
+        "TextArray",
+        "TextArray",
+        "TextArray",
+        "Bool",
+        "Bool",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Text",
+        "Jsonb",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Jsonb",
+        "Jsonb",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "2449aacc887c483e070df7cbdd194b97351d52e83f87c978d7bc704f0323739d"
+}

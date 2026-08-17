@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knox-ui
+  namespace: knox
+  labels:
+    app: knox-ui
+    app.kubernetes.io/part-of: knox-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: knox-ui
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: knox-ui
+        app.kubernetes.io/part-of: knox-platform
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: knox-ui
+      terminationGracePeriodSeconds: 30
+
+      containers:
+        - name: ui
+          image: knox/knox-iam-ui:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            # Deployment-specific vars — read from ConfigMap and exposed to the
+            # entrypoint.sh sed-replacement step at container startup.
+            - name: NEXT_PUBLIC_MANAGEMENT_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: knox-ui-config
+                  key: MANAGEMENT_CLIENT_ID
+            - name: NEXT_PUBLIC_MANAGEMENT_TENANT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: knox-ui-config
+                  key: MANAGEMENT_TENANT_ID
+            # The UI derives the tenant from its own hostname, so it needs the
+            # same base domain the server strips.
+            - name: NEXT_PUBLIC_BASE_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: knox-ui-config
+                  key: BASE_DOMAIN
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 12  # 60s startup window
+

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: knox-ui-config
+  namespace: knox
+  labels:
+    app.kubernetes.io/part-of: knox-platform
+data:
+  MANAGEMENT_CLIENT_ID: "management"
+  MANAGEMENT_TENANT_ID: "knox-root"
+  # The UI derives the tenant from its own hostname; must match KNOX_BASE_DOMAIN.
+  BASE_DOMAIN: "knox.example.com"

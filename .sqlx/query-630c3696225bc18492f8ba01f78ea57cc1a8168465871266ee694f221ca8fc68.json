@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE mfa_backup_codes\n            SET used_at = now()\n            WHERE tenant_id = $1 AND identity_id = $2 AND code_hash = $3 AND used_at IS NULL\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "630c3696225bc18492f8ba01f78ea57cc1a8168465871266ee694f221ca8fc68"
+}

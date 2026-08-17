@@ -1,0 +1,153 @@
+# Builds the six Knox images and pushes them to GHCR as ghcr.io/<owner>/knox-iam-*.
+#
+# Tags: `main` (moving, what the quickstart overlay pulls) and the short commit
+# SHA. Neither is a release — the README is explicit that nothing here is stable.
+#
+# Each architecture is built on its own native runner and the two are stitched
+# into one manifest afterwards. Cross-building the Rust images under QEMU works
+# but takes the better part of an hour; ubuntu-24.04-arm is free for public
+# repositories, so there is no reason to emulate.
+#
+# First run only: each package is created private. Flip them to public under the
+# repository's Packages settings, or a quickstart pull fails with an
+# authentication error rather than an obvious 404.
+name: Publish images
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'k6/**'
+  workflow_dispatch:
+
+concurrency:
+  group: publish-images-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    name: ${{ matrix.image }} (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [server, postgres, migrate, ui, bootstrap, pgbouncer]
+        arch: [amd64, arm64]
+        # `arch` is a real matrix dimension, so these merge a runner into every
+        # combination sharing that arch — 12 native jobs. Listing the runners
+        # under `include` alone would collapse to one arch instead.
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve Dockerfile, context and build metadata
+        id: cfg
+        run: |
+          case "${{ matrix.image }}" in
+            server)     file=Dockerfile;                  ctx=.                ;;
+            postgres)   file=docker/postgres/Dockerfile;  ctx=docker/postgres  ;;
+            migrate)    file=docker/migrate/Dockerfile;   ctx=.                ;;
+            ui)         file=docker/ui/Dockerfile;        ctx=.                ;;
+            bootstrap)  file=docker/bootstrap/Dockerfile; ctx=.                ;;
+            pgbouncer)  file=docker/pgbouncer/Dockerfile; ctx=docker/pgbouncer ;;
+          esac
+          {
+            echo "file=$file"
+            echo "context=$ctx"
+            echo "build_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } >> "$GITHUB_OUTPUT"
+
+      # Pushed by digest only. Tags are attached when the manifest is assembled,
+      # so a half-finished matrix never moves `main` onto a partial set.
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ steps.cfg.outputs.context }}
+          file: ${{ steps.cfg.outputs.file }}
+          platforms: linux/${{ matrix.arch }}
+          build-args: |
+            KNOX_GIT_SHA=${{ github.sha }}
+            KNOX_BUILD_TIME=${{ steps.cfg.outputs.build_time }}
+          cache-from: type=gha,scope=${{ matrix.image }}-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}-${{ matrix.arch }}
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ github.repository_owner }}/knox-iam-${{ matrix.image }},push-by-digest=true,name-canonical=true,push=true
+
+      # The digest goes in the file's *contents*, not its name: it contains a
+      # colon, which upload-artifact rejects in paths.
+      - name: Record digest
+        run: |
+          mkdir -p /tmp/digests
+          echo "${{ steps.build.outputs.digest }}" > "/tmp/digests/${{ matrix.arch }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ matrix.image }}-${{ matrix.arch }}
+          path: /tmp/digests/*
+          retention-days: 1
+
+  manifest:
+    name: manifest ${{ matrix.image }}
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        image: [server, postgres, migrate, ui, bootstrap, pgbouncer]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: digest-${{ matrix.image }}-*
+          path: /tmp/digests
+          merge-multiple: true
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create the multi-arch manifest
+        run: |
+          set -euo pipefail
+          repo="${REGISTRY}/${{ github.repository_owner }}/knox-iam-${{ matrix.image }}"
+
+          refs=()
+          for f in /tmp/digests/*; do
+            refs+=("${repo}@$(cat "$f")")
+          done
+
+          if (( ${#refs[@]} != 2 )); then
+            echo "Expected 2 per-arch digests, found ${#refs[@]}" >&2
+            exit 1
+          fi
+
+          docker buildx imagetools create \
+            --tag "${repo}:main" \
+            --tag "${repo}:${GITHUB_SHA::7}" \
+            "${refs[@]}"
+
+          docker buildx imagetools inspect "${repo}:main"

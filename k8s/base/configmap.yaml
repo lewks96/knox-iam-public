@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: knox-app-config
+  namespace: knox
+  labels:
+    app.kubernetes.io/part-of: knox-platform
+data:
+  HOST: "0.0.0.0"
+  PORT: "8080"
+
+  # Tenants are subdomains of this base: acme -> https://acme.knox.example.com.
+  # These only MINT the issuer for NEW tenants — existing tenants keep the
+  # issuer stored on their row, so changing this never re-identifies anyone.
+  KNOX_SCHEME: "https"
+  KNOX_BASE_DOMAIN: "knox.example.com"
+
+  # nginx preserves the original Host, so the forwarded header must NOT be
+  # trusted: doing so would let a caller choose which tenant they resolve as.
+  KNOX_TRUST_FORWARDED_HOST: "false"
+
+  KNOX_LOG: "warn,server::handlers=info,server::main=info"
+
+  # CORS is no longer configured here. The OIDC surface (/oauth2, /.well-known)
+  # sends Allow-Origin: * without credentials so third-party relying parties can
+  # run browser PKCE flows; the management API under /api is same-origin only.
+
+  MAX_CONNECTIONS: "20"
+  MIN_CONNECTIONS: "2"
+  ACQUIRE_TIMEOUT: "5"
+  IDLE_TIMEOUT: "300"
+  MAX_LIFETIME: "1800"
+
+  STATEMENT_CACHE_CAPACITY: "0"
+
+  ARGON2_M_COST: "19456"
+  ARGON2_T_COST: "2"
+  ARGON2_P_COST: "1"
+
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://aspire-dashboard.knox.svc.cluster.local:18889"
+

@@ -1,0 +1,133 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: knox-bootstrap
+  namespace: knox
+  labels:
+    app.kubernetes.io/part-of: knox-platform
+    app.kubernetes.io/component: bootstrap
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: knox-bootstrap
+        app.kubernetes.io/part-of: knox-platform
+    spec:
+      restartPolicy: Never
+
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z knox-db-rw.knox.svc.cluster.local 5432; do
+                echo "waiting for postgres…"; sleep 2
+              done
+              echo "postgres ready"
+
+        - name: wait-for-redis
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z knox-redis.knox.svc.cluster.local 6379; do
+                echo "waiting for redis…"; sleep 2
+              done
+              echo "redis ready"
+
+      containers:
+        - name: bootstrap
+          # Both lines are patched by k3d-setup.sh before apply: the image to
+          # the current tag, and the policy to Always when the images come from
+          # a registry. This Job is applied directly rather than through
+          # kustomize, so it gets no overlay patches of its own.
+          #
+          # IfNotPresent is the safe default here because Kubernetes would
+          # otherwise infer Always from the `latest` tag and try to pull an
+          # image that only exists on the node, side-loaded by k3d.
+          image: knox/knox-iam-bootstrap:latest
+          imagePullPolicy: IfNotPresent
+          args: [ "--output", "json" ]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: knox-app-secret
+                  key: DATABASE_MIGRATE_URL
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: knox-app-secret
+                  key: REDIS_URL
+            - name: AES_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: knox-app-secret
+                  key: AES_MASTER_KEY
+            # The root tenant's issuer and its callback URI are both derived
+            # from these three (see IssuerConfig::from_env), giving
+            #   https://knox-root.{KNOX_BASE_DOMAIN}[:{KNOX_PUBLIC_PORT}]/callback
+            #
+            # They are read from knox-app-config — the same ConfigMap the server
+            # mints issuers from — rather than duplicated into the bootstrap
+            # Secret, because a disagreement here is unrecoverable: the issuer is
+            # written onto the tenant row once and is immutable thereafter.
+            #
+            # This replaces KNOX_HOST/KNOX_HOSTS, which the binary no longer
+            # reads. That pair existed to register one redirect URI per hostname
+            # back when a deployment answered on several; with a subdomain per
+            # tenant there is exactly one canonical host.
+            - name: KNOX_SCHEME
+              valueFrom:
+                configMapKeyRef:
+                  name: knox-app-config
+                  key: KNOX_SCHEME
+            - name: KNOX_BASE_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: knox-app-config
+                  key: KNOX_BASE_DOMAIN
+            # Absent in the cluster, where the ingress answers on 443.
+            - name: KNOX_PUBLIC_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: knox-app-config
+                  key: KNOX_PUBLIC_PORT
+                  optional: true
+            - name: ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: knox-bootstrap-config
+                  key: ADMIN_EMAIL
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: knox-bootstrap-config
+                  key: ADMIN_PASSWORD
+            - name: ADMIN_FIRST_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: knox-bootstrap-config
+                  key: ADMIN_FIRST_NAME
+                  optional: true
+            - name: ADMIN_LAST_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: knox-bootstrap-config
+                  key: ADMIN_LAST_NAME
+                  optional: true
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
+
+

@@ -1,0 +1,99 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                id, tenant_id, kid, use_type, kty, alg,\n                public_key_pem, x509_cert_pem, encrypted_private_key,\n                state as \"state: KeyState\",\n                created_at, expires_at\n            FROM tenant_keys\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "tenant_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "kid",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "use_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "kty",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "alg",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "public_key_pem",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "x509_cert_pem",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "encrypted_private_key",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 9,
+        "name": "state: KeyState",
+        "type_info": {
+          "Custom": {
+            "name": "key_state",
+            "kind": {
+              "Enum": [
+                "active",
+                "expired",
+                "revoked"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "expires_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "74a07e8dfb60c5b9b590b689515a46bbb2ef966119961c76a85833a113fe7ce7"
+}

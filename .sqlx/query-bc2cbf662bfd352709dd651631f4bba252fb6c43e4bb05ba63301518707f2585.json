@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                DELETE FROM mfa_methods\n                WHERE tenant_id = $1 AND identity_id = $2 AND method = $3 AND verified_at IS NULL\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        {
+          "Custom": {
+            "name": "mfa_method",
+            "kind": {
+              "Enum": [
+                "totp",
+                "webauthn",
+                "sms"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "bc2cbf662bfd352709dd651631f4bba252fb6c43e4bb05ba63301518707f2585"
+}

@@ -1,0 +1,102 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                id, tenant_id, occurred_at, event_type, actor_type, actor_id,\n                target_type, target_id, outcome, ip, user_agent,\n                correlation_id, details\n            FROM audit_events\n            WHERE tenant_id = $1\n              AND ($2::timestamptz IS NULL OR occurred_at >= $2)\n              AND ($3::timestamptz IS NULL OR occurred_at <= $3)\n              AND ($4::text IS NULL OR event_type = $4)\n              AND ($5::uuid IS NULL OR actor_id = $5)\n              AND ($6::text IS NULL OR outcome = $6)\n              AND ($7::timestamptz IS NULL OR (occurred_at, id) < ($7, $8))\n            ORDER BY occurred_at DESC, id DESC\n            LIMIT $9\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "tenant_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "occurred_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 3,
+        "name": "event_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "actor_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "actor_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 6,
+        "name": "target_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "target_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "outcome",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "ip",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "user_agent",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "correlation_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "details",
+        "type_info": "Jsonb"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz",
+        "Text",
+        "Uuid",
+        "Text",
+        "Timestamptz",
+        "Uuid",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "2f785ca2fc6121725651d5e36336093eda9e41fc8f781729a7589fbc96d97179"
+}

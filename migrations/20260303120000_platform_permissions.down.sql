@@ -1,0 +1,32 @@
+-- Remove platform-level permissions
+DELETE FROM permissions WHERE key IN (
+    'PlatformTenantCreate',
+    'PlatformTenantRead',
+    'PlatformTenantUpdate',
+    'PlatformTenantDelete',
+    'PlatformTenantList',
+    'PlatformIdentityCreate',
+    'PlatformIdentityRead',
+    'PlatformIdentityUpdate',
+    'PlatformIdentityDelete',
+    'PlatformIdentityList',
+    'PlatformClientCreate',
+    'PlatformClientRead',
+    'PlatformClientUpdate',
+    'PlatformClientDelete',
+    'PlatformClientList',
+    'PlatformRoleCreate',
+    'PlatformRoleRead',
+    'PlatformRoleUpdate',
+    'PlatformRoleDelete',
+    'PlatformRoleList',
+    'PlatformConfigRead',
+    'PlatformConfigWrite',
+    'PlatformMetricsRead',
+    'PlatformAuditRead',
+    -- Within-tenant client management
+    'ClientCreate',
+    'ClientRead',
+    'ClientUpdate',
+    'ClientDelete'
+);

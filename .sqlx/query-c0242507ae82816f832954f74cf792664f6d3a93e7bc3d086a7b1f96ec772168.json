@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE tenant_keys SET state = 'revoked' WHERE tenant_id = $1 AND state != 'revoked'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c0242507ae82816f832954f74cf792664f6d3a93e7bc3d086a7b1f96ec772168"
+}

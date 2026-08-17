@@ -1,0 +1,55 @@
+services:
+  postgres:
+    build:
+      context: ./docker/postgres
+      dockerfile: Dockerfile
+    image: knox-iam-postgres:local
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: knox
+    # Enable pg_cron extension via command-line arguments
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_preload_libraries=pg_cron"
+      - "-c"
+      - "cron.database_name=knox"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d knox"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # One-shot container: runs sqlx migrations then exits.
+  # Run with `docker compose up migrate` (or `--exit-code-from migrate`) when
+  # you want to (re-)apply migrations against the local Postgres before
+  # starting the server locally with `cargo run -p server`.
+  migrate:
+    image: knox-iam-migrate:local
+    build:
+      context: .
+      dockerfile: docker/migrate/Dockerfile
+    env_file: .env.compose
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  postgres_data:

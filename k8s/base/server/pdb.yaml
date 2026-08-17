@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: knox-server-pdb
+  namespace: knox
+  labels:
+    app.kubernetes.io/part-of: knox-platform
+spec:
+  # Always keep at least 1 pod running during node drains / rolling updates
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: knox-server
+

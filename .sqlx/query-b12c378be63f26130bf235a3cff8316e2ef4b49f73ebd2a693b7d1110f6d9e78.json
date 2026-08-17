@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO mfa_backup_codes (tenant_id, identity_id, code_hash)\n            SELECT $1, $2, unnest($3::text[])\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b12c378be63f26130bf235a3cff8316e2ef4b49f73ebd2a693b7d1110f6d9e78"
+}

@@ -1,0 +1,221 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM clients WHERE tenant_id = $1 AND name = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "tenant_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "logo_uri",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "client_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "client_secret_hash",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "token_endpoint_auth_method",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "grant_types",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 9,
+        "name": "response_types",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 10,
+        "name": "redirect_uris",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 11,
+        "name": "post_logout_redirect_uris",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 12,
+        "name": "allowed_scopes",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 13,
+        "name": "require_pkce",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 14,
+        "name": "require_auth_time",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 15,
+        "name": "access_token_ttl",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 16,
+        "name": "refresh_token_ttl",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 17,
+        "name": "id_token_ttl",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 18,
+        "name": "auth_code_ttl",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 19,
+        "name": "token_version",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 20,
+        "name": "jwks_uri",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 21,
+        "name": "jwks",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 22,
+        "name": "tls_client_auth_subject_dn",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 23,
+        "name": "tls_client_auth_san_dns",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 24,
+        "name": "tls_client_auth_san_uri",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 25,
+        "name": "tls_client_auth_san_ip",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 26,
+        "name": "tls_client_auth_san_email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 27,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 28,
+        "name": "metadata",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 29,
+        "name": "custom_attributes",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 30,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 31,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 32,
+        "name": "allow_refresh_tokens",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 33,
+        "name": "pool_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "c20d1ea6165e624edab7fce7678e10089e9092545f78a86accd1532c30c474e2"
+}

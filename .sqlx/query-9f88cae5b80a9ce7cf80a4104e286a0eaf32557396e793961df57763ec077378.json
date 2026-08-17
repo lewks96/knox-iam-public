@@ -1,0 +1,86 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT r.id, r.tenant_id, r.name, r.description,\n                   r.kind as \"kind: RoleKind\",\n                   r.created_at, r.updated_at,\n                   p.id as \"perm_id?\", p.key as \"perm_key?\", p.description as \"perm_desc?\"\n            FROM roles r\n            LEFT JOIN role_permissions rp ON rp.role_id = r.id\n            LEFT JOIN permissions p ON p.id = rp.permission_id\n            WHERE r.tenant_id = $1\n            ORDER BY r.name, p.key\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "tenant_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "kind: RoleKind",
+        "type_info": {
+          "Custom": {
+            "name": "role_kind",
+            "kind": {
+              "Enum": [
+                "custom",
+                "system"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "perm_id?",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 8,
+        "name": "perm_key?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "perm_desc?",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "9f88cae5b80a9ce7cf80a4104e286a0eaf32557396e793961df57763ec077378"
+}

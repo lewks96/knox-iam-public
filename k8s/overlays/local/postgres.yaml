@@ -1,0 +1,125 @@
+# Local-only Postgres deployment for k3d development.
+# Uses a simple Deployment (single pod) instead of a complex operator setup.
+#
+# The Service is named knox-db-rw so the read-write and read-only endpoints have
+# distinct names, the way a managed database would present them.
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: knox-postgres-pvc
+  namespace: knox
+  labels:
+    app: knox-postgres
+    app.kubernetes.io/part-of: knox-platform
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knox-postgres
+  namespace: knox
+  labels:
+    app: knox-postgres
+    app.kubernetes.io/part-of: knox-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: knox-postgres
+  template:
+    metadata:
+      labels:
+        app: knox-postgres
+        app.kubernetes.io/part-of: knox-platform
+    spec:
+      containers:
+        - name: postgres
+          image: knox/knox-iam-postgres:local  # overridden in kustomization images:
+          # Explicit, and load-bearing: Kubernetes defaults this to Always when
+          # the tag is `latest`, and these images are side-loaded with
+          # `k3d image import`, never published. Leaving it unset means the
+          # kubelet ignores the image sitting on the node and fails to pull
+          # docker.io/knox/knox-iam-postgres — a namespace nobody owns.
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: knox-db-credentials
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: knox-db-credentials
+                  key: password
+            - name: POSTGRES_DB
+              value: knox
+          # Tune PG memory to avoid OOM under load.
+          # shared_buffers=128MB (~25% of 512Mi request, leaves room for connections).
+          # work_mem=2MB keeps per-sort RAM low across concurrent backends.
+          # max_connections=200: pgbouncer pool holds ≤150, +50 for direct connections/migrations.
+          args:
+            - "-c"
+            - "shared_buffers=128MB"
+            - "-c"
+            - "work_mem=2MB"
+            - "-c"
+            - "maintenance_work_mem=32MB"
+            - "-c"
+            - "max_connections=200"
+            - "-c"
+            - "effective_cache_size=512MB"
+            - "-c"
+            - "shared_preload_libraries=pg_cron"
+            - "-c"
+            - "cron.database_name=knox"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "knox", "-d", "knox"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "knox", "-d", "knox"]
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: knox-postgres-pvc
+---
+# Named knox-db-rw so one DATABASE_URL shape works whether the database is in
+# the cluster or external.
+apiVersion: v1
+kind: Service
+metadata:
+  name: knox-db-rw
+  namespace: knox
+  labels:
+    app: knox-postgres
+    app.kubernetes.io/part-of: knox-platform
+spec:
+  selector:
+    app: knox-postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+

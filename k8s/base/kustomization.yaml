@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: knox
+resources:
+  # 1. Namespace first
+  - namespace.yaml
+  # 2. Config
+  - configmap.yaml
+  # 2b. Ingress (server + UI merged: nginx rejects duplicate host/path rules)
+  - ingress.yaml
+  # 3. Data layer
+  - redis/deployment.yaml
+  - redis/service.yaml
+  # 4. API server
+  - server/deployment.yaml
+  - server/service.yaml
+  - server/hpa.yaml
+  - server/pdb.yaml
+  # 5. UI
+  - ui/configmap.yaml
+  - ui/deployment.yaml
+  - ui/service.yaml
+  # 6. Observability — no ingress: the Aspire dashboard cannot be hosted at a
+  # sub-path (no path-base support, https://github.com/dotnet/aspire/issues/4159).
+  # Access it via: kubectl port-forward -n knox svc/aspire-dashboard 18888:18888
+  - aspire/deployment.yaml
+  - aspire/service.yaml

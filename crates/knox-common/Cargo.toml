@@ -1,0 +1,20 @@
+[package]
+name = "knox-common"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+thiserror = { workspace = true }
+serde = { workspace = true }
+uuid = { workspace = true }
+time = { workspace = true }
+async-trait = { workspace = true }
+# "optional = true" makes this a dependency we can toggle
+sqlx = { workspace = true, features = ["postgres", "uuid", "time", "json"], optional = true }
+serde_json = { workspace = true }
+base64 = { workspace = true }
+
+[features]
+default = []
+# You MUST explicitly define the feature here to silence the warning and enable the cfg logic
+sqlx = ["dep:sqlx"]

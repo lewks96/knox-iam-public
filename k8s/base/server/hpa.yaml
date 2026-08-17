@@ -1,0 +1,41 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: knox-server-hpa
+  namespace: knox
+  labels:
+    app.kubernetes.io/part-of: knox-platform
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: knox-server
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    # CPU only. Memory is unreliable as an HPA signal for Rust services because
+    # the allocator holds onto pages well after they're freed by the
+    # application, so RSS climbs and stays high without corresponding pressure.
+    # Scaling on CPU tracks actual load (request processing + argon2) honestly.
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      # React quickly to traffic spikes
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+    scaleDown:
+      # Scale down slowly to avoid flapping
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+

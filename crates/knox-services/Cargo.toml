@@ -1,0 +1,30 @@
+[package]
+name = "knox-services"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+async-trait = { workspace = true }
+argon2 = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+hex = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid = { workspace = true, features = ["serde", "v4"] }
+validator = { version = "0.20.0", features = ["derive"] }
+time = { workspace = true }
+rand = { workspace = true }
+rand_core = { workspace = true }
+jsonwebtoken = { workspace = true, features = ["rust_crypto"] }
+sha2 = { workspace = true }
+base64ct = { workspace = true, features = ["alloc"] }
+base64 = { workspace = true }
+aes-gcm = { workspace = true }
+rsa = { workspace = true }
+pkcs8 = { workspace = true }
+spki = { workspace = true }
+
+knox-common = { workspace = true, features = ["sqlx"] }
+knox-core = { workspace = true }
+

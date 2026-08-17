@@ -1,0 +1,108 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO mfa_methods (tenant_id, identity_id, method, secret_enc, public_data)\n            VALUES ($1, $2, $3, $4, $5)\n            RETURNING\n                id, tenant_id, identity_id,\n                method as \"method: MfaMethodKind\",\n                secret_enc, public_data, last_used_step,\n                verified_at, last_used_at, created_at, updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "tenant_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "identity_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "method: MfaMethodKind",
+        "type_info": {
+          "Custom": {
+            "name": "mfa_method",
+            "kind": {
+              "Enum": [
+                "totp",
+                "webauthn",
+                "sms"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "secret_enc",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 5,
+        "name": "public_data",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "last_used_step",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 7,
+        "name": "verified_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "last_used_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        {
+          "Custom": {
+            "name": "mfa_method",
+            "kind": {
+              "Enum": [
+                "totp",
+                "webauthn",
+                "sms"
+              ]
+            }
+          }
+        },
+        "Bytea",
+        "Jsonb"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "4948c78eb29635f5db1e72d143c415876c765414ab68c284178579c1b8be33f7"
+}

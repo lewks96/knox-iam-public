@@ -1,0 +1,124 @@
+# PgBouncer — connection pooler for local dev.
+#
+# Sits between the Knox server and Postgres in SESSION pooling mode.
+# Each sqlx TCP connection is pinned 1:1 to a Postgres backend for its lifetime.
+# This is required for sqlx compatibility: sqlx's extended query protocol sends
+# Parse+Sync then Bind+Execute+Sync as separate round trips, and transaction
+# pooling would recycle the backend between them (clearing named prepared
+# statements with DISCARD ALL). Session mode avoids that entirely.
+#
+# The migrate init container and bootstrap job connect directly to knox-db-rw.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer
+  namespace: knox
+  labels:
+    app: pgbouncer
+    app.kubernetes.io/part-of: knox-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgbouncer
+  template:
+    metadata:
+      labels:
+        app: pgbouncer
+        app.kubernetes.io/part-of: knox-platform
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z knox-db-rw.knox.svc.cluster.local 5432; do
+                echo "waiting for postgres..."; sleep 2
+              done
+              echo "postgres ready"
+      containers:
+        - name: pgbouncer
+          # Our own pgbouncer image — built via: ./scripts/docker.sh build pgbouncer
+          # Based on pgbouncer/pgbouncer:1.23.1, configures via env vars.
+          image: knox/knox-iam-pgbouncer:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+              name: pgbouncer
+          env:
+            - name: DB_HOST
+              value: knox-db-rw.knox.svc.cluster.local
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: knox
+            - name: DB_USER
+              value: knox
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: knox-db-credentials
+                  key: password
+            # Session pooling — each sqlx TCP connection is pinned to one Postgres
+            # backend for its lifetime. Safe for sqlx's extended query protocol:
+            # named prepared statements (sqlx_s_N) are stable on the backend and
+            # DISCARD ALL only fires when the TCP connection closes, not mid-query.
+            - name: POOL_MODE
+              value: session
+            # Max simultaneous backend sessions. Must accommodate all app pool connections
+            # (max_pods × MAX_CONNECTIONS). 10 pods × 20 connections = 200, set to 150
+            # to allow headroom while staying under Postgres max_connections (typically 200).
+            - name: DEFAULT_POOL_SIZE
+              value: "150"
+            # PgBouncer will accept up to 200 incoming app connections and queue them.
+            - name: MAX_CLIENT_CONN
+              value: "200"
+            - name: RESERVE_POOL_SIZE
+              value: "5"
+            - name: RESERVE_POOL_TIMEOUT
+              value: "1"
+            - name: SERVER_IDLE_TIMEOUT
+              value: "60"
+            # scram-sha-256 + auth_query: PgBouncer fetches the real SCRAM
+            # verifier from pg_authid at connect time.
+            - name: AUTH_TYPE
+              value: scram-sha-256
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "32Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"
+          readinessProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 10
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: knox-pgbouncer
+  namespace: knox
+  labels:
+    app: pgbouncer
+    app.kubernetes.io/part-of: knox-platform
+spec:
+  selector:
+    app: pgbouncer
+  ports:
+    - port: 5432
+      targetPort: 5432
+
+
+
+

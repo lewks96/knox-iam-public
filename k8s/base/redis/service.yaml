@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: knox-redis
+  namespace: knox
+  labels:
+    app: knox-redis
+    app.kubernetes.io/part-of: knox-platform
+spec:
+  selector:
+    app: knox-redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+  type: ClusterIP
+

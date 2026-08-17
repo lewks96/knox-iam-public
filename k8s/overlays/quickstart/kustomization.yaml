@@ -1,0 +1,78 @@
+# Quickstart overlay — the local overlay, but pulling published images.
+#
+# Layered on `../local` rather than on `../../base` so it inherits the same
+# in-cluster Postgres, PgBouncer, replica counts and pool sizing; the only
+# difference is where the images come from. Nothing to build:
+#
+#   ./scripts/k3d-setup.sh --published setup
+#
+# `main` is the tip of the main branch, rebuilt by .github/workflows/publish-images.yml
+# on every push. It is not a release and carries no stability promise — see the
+# README. Pin to a specific SHA tag instead if you want a fixed target:
+#
+#   IMAGE_TAG=<sha> ./scripts/k3d-setup.sh --published deploy
+#
+# Note the image *names* below must match what `../local` produces (which is
+# what `base/` names, since the local overlay only rewrites tags). This overlay
+# then rewrites both name and tag.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: knox
+
+resources:
+  - ../local
+
+images:
+  - name: knox/knox-iam-server
+    newName: ghcr.io/lewks96/knox-iam-server
+    newTag: main
+  - name: knox/knox-iam-migrate
+    newName: ghcr.io/lewks96/knox-iam-migrate
+    newTag: main
+  - name: knox/knox-iam-postgres
+    newName: ghcr.io/lewks96/knox-iam-postgres
+    newTag: main
+  - name: knox/knox-iam-ui
+    newName: ghcr.io/lewks96/knox-iam-ui
+    newTag: main
+  - name: knox/knox-iam-pgbouncer
+    newName: ghcr.io/lewks96/knox-iam-pgbouncer
+    newTag: main
+
+patches:
+  # The local overlay sets imagePullPolicy: IfNotPresent because its images are
+  # side-loaded with `k3d image import` and a pull would find nothing. Here they
+  # come from a registry and `main` is a moving tag, so pull it.
+  - target:
+      kind: Deployment
+      name: knox-server
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Always
+      # initContainers/2 is `migrate`, which is also a Knox image.
+      - op: replace
+        path: /spec/template/spec/initContainers/2/imagePullPolicy
+        value: Always
+  - target:
+      kind: Deployment
+      name: knox-ui
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Always
+  - target:
+      kind: Deployment
+      name: pgbouncer
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Always
+  - target:
+      kind: Deployment
+      name: knox-postgres
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Always

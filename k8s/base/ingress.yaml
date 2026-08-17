@@ -1,0 +1,68 @@
+# One Ingress for both backends.
+#
+# nginx rejects duplicate host/path rules across Ingress objects, and with a
+# wildcard host the server and UI would overlap for certain — so they are merged
+# here rather than kept as two resources.
+#
+# Path split (see the axum router in server/src/main.rs):
+#   /.well-known, /oauth2 → server, and they MUST stay at the root: the issuer
+#                           is https://{tenant}.{base} with no path, so OIDC
+#                           discovery has to resolve directly beneath it.
+#   /api                  → server, the management surface. Not rewritten: the
+#                           server owns the prefix so local and deployed
+#                           environments agree on paths.
+#   /                     → UI, including the hosted login page. Keeping it on
+#                           the tenant's own host makes the SSO cookie
+#                           first-party, avoiding third-party cookie blocking.
+#
+# /sys is deliberately absent — health probes reach it in-cluster by pod IP.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: knox-ingress
+  namespace: knox
+  labels:
+    app.kubernetes.io/part-of: knox-platform
+  annotations:
+    nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
+    nginx.ingress.kubernetes.io/compute-full-forwarded-for: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+spec:
+  ingressClassName: nginx
+  rules:
+    # REPLACE the host in the overlay. A wildcard matches exactly one label, so
+    # a.b.<base> will not route — which is the intent, and matches the app-level
+    # rejection in tenant_host.rs.
+    - host: "*.knox.example.com"
+      http:
+        paths:
+          - path: /.well-known
+            pathType: Prefix
+            backend:
+              service:
+                name: knox-server
+                port:
+                  name: http
+          - path: /oauth2
+            pathType: Prefix
+            backend:
+              service:
+                name: knox-server
+                port:
+                  name: http
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: knox-server
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: knox-ui
+                port:
+                  name: http

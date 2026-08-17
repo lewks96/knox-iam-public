@@ -1,0 +1,2 @@
+ALTER TABLE clients
+    ADD COLUMN allow_refresh_tokens BOOLEAN NOT NULL DEFAULT FALSE;
